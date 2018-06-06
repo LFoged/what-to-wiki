@@ -42,9 +42,9 @@ const showResults = (response) => {
     const data = response.query.search;
     // Check that response is not an empty Array 
     if (data.length < 1) {
-        showAlert('No results found - please try another search query')
+        return showAlert('No results found - please try another search query')
     } else {
-        // document fragment - touch DOM once with all results
+        // document fragment - so DOM only updated once with all elements
         const fragment = document.createDocumentFragment();
         data.map(item => {
             // <div> to hold other elements containing response text
@@ -91,7 +91,7 @@ const showAlert = (message) => {
     setTimeout(() => {
         document.querySelector('.alert').remove() || false; 
     }, 2500);
-}
+};
 
 
 // EventListener on 'searchForm', initializes search functionality

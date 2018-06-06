@@ -7,50 +7,18 @@
     box-sizing: inherit;
 }
 
+
+/* TAGs */
 html {
     box-sizing: border-box;
 }
 
-/* TAGs */
 body {
     font-size: 62.5%;
     font-family: Arial, Helvetica, sans-serif;
     background: #457fca;  /* fallback for old browsers */
     background: -webkit-linear-gradient(to right, #5691c8, #457fca);  /* Chrome 10-25, Safari 5.1-6 */
     background: linear-gradient(to right, #5691c8, #457fca); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */      
-}
-
-h1 {
-    font-size: 1.2rem;
-    margin-bottom: 2.75rem;
-}
-
-input {
-    font-size: 1.65rem;
-    color: whitesmoke;
-    background-color: transparent;
-    width: 70%;
-    outline: none;
-    border: 0;
-    border-bottom: 0.05rem solid white;
-    padding: 0.5rem 0.6rem;
-    margin: 4rem 0 0.75rem 1.25rem;
-    min-width: 12.5rem;
-    backface-visibility: hidden;
-    z-index: 1;
-}
-
-input::placeholder {
-    color: black;
-    transition: ease-in-out 0.25s;
-}
-/* Input field's placeholder - smaller font-size font when in focus*/
-input:focus::-webkit-input-placeholder {
-    font-size: 1.3rem;
-}
-
-input:focus:-moz-placeholder {
-    font-size: 1.3rem;
 }
 
 img {
@@ -80,6 +48,34 @@ a:active {
     max-width: 45rem;
     min-width: 13rem;
     text-align: center;
+}
+
+.search-input {
+    font-size: 1.65rem;
+    color: whitesmoke;
+    background-color: transparent;
+    width: 70%;
+    outline: none;
+    border: 0;
+    border-bottom: 0.05rem solid white;
+    padding: 0.5rem 0.6rem;
+    margin: 4rem 0 0.75rem 1.25rem;
+    min-width: 12.5rem;
+    backface-visibility: hidden;
+    z-index: 1;
+}
+
+.search-input::placeholder {
+    color: black;
+    transition: ease-in-out 0.25s;
+}
+/* Input field's placeholder - smaller font-size font when in focus*/
+.search-input:focus::-webkit-input-placeholder {
+    font-size: 1.3rem;
+}
+
+.search-input:focus:-moz-placeholder {
+    font-size: 1.3rem;
 }
 
 .btn {
