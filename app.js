@@ -1,5 +1,13 @@
 'use strict';
 
+
+/** 
+ * TODO: 
+ * 'Suggested query' button / search if no results. 
+ * 'clear search' / 'new search button'
+*/
+
+
 // GLOBAL VARIABLES - include ref. to 'document' to min. lookup
 const doc = document;
 const searchForm = doc.querySelector('.search-form');
@@ -7,92 +15,110 @@ const searchInput = doc.querySelector('.search-input');
 const sectionResults = doc.querySelector('.section-results');
 
 
-// FUNCTION - 'helper'. Create element, assign className & other attribute
-const newElement = (element, classNm, attribute=null, value=null) => {
+// PERIPHERAL FUNCTIONS
+// FUNCTION - create element, assign className & other attribute
+const newElement = (element, classNm) => {
     const newEl = doc.createElement(element);
     newEl.className = classNm;
-    if (attribute && value) newEl[attribute] = value;
 
     return newEl;
 };
 
-// FUNCTION - uses jsonP method to make a search request
-const searchWiki = (event) => {
-    // Prevent page reload on form submit
-    event.preventDefault();
-    const query = searchInput.value;
-    // Regex check to ensure input field isn't empty or filled with whitespace
-    if (!query || (/^\s+$/).test(query)) {
-        // Function for displaying alerts
-        return showAlert('Please enter a search query');
-    } else {
-        // Create script tag & append to body, to make 'JSONP request' 
-        const scriptTag = newElement(
-            'script', 'jsonP', 'src',
-            `https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srsearch=${query}&callback=showResults`
-        );
-        document.body.appendChild(scriptTag);
-        // Remove 'jsonP' script tag from DOM if present, otherwise do nothing
-        document.querySelector('.jsonP').remove() || false;
+// FUNCTION - clear past result from DOM, if present
+const clearPastResults = () => {
+    while (sectionResults.hasChildNodes()) {
+        sectionResults.removeChild(sectionResults.firstChild);
     }
 };
 
-// FUNCTION - Creates elements for displaying response & appends them to DOM
-const showResults = (response) => {
-    const data = response.query.search;
-    // Check that response is not an empty Array 
-    if (data.length < 1) {
-        return showAlert('No results found - please try another search query')
-    } else {
-        // document fragment - so DOM only updated once with all elements
-        const fragment = document.createDocumentFragment();
-        data.map(item => {
-            // <div> to hold other elements containing response text
-            const resultDiv = newElement('div', 'result-div');
-            // <h3> element as title for article - links to Wiki article
-            const title = newElement(
-                'h3', 'title', 'innerHTML', 
-                `<a class="result-link" href="https://en.wikipedia.org/wiki/${item.title.replace(/\s/, '_')}" target="_blank">${item.title}</a>`
-            );
-            // <p> element for snippet of article 'body'
-            const body = newElement(
-                'p', 'result-body', 'innerHTML', `${item.snippet}...` 
-            ); 
-            // <p> element to display full article's length (word count)
-            const wordCount = newElement(
-                'p', 'result-word-count', 'innerHTML',
-                `<em>Article Word Count:</em> ${item.wordcount}`
-            ); 
-
-            // Append title, body and wordCount elements to result <div>
-            resultDiv.appendChild(title);
-            resultDiv.appendChild(body);
-            resultDiv.appendChild(wordCount);
-            // Append the complete result <div> to the Document Fragment
-            fragment.appendChild(resultDiv);
-        });
-        // Clear results form previous searches, if there are any
-        while (sectionResults.hasChildNodes()) {
-            sectionResults.removeChild(sectionResults.firstChild);
-        }
-        // Append Document Fragment to DOM - 
-        sectionResults.appendChild(fragment);
-    }    
-};
-
-// FUNCTION - Display error alert messages
-const showAlert = (message) => {
-    // <div> to display alert message & append message to <div> in a textNode
+// FUNCTION - display error alert messages
+const showAlert = (message='Aww shucks! Something went wrong') => {
     const alertDiv = newElement('div', 'alert');
-    alertDiv.appendChild(document.createTextNode(message));
-    // Check whether any alerts are already in DOM - attaches alert to DOM if none
-    document.querySelector('.alert') ? false : searchForm.insertBefore(alertDiv, searchInput);
-    // Timeout to remove newly inserted alert from DOM after 2.5 seconds, if any alerts present
+    alertDiv.appendChild(doc.createTextNode(message));
+    // attach alert to DOM if none already present
+    if (!doc.querySelector('.alert')) searchForm.insertBefore(alertDiv, searchInput);
+    // Timeout to remove alert after 2.5 seconds, if present
     setTimeout(() => {
-        document.querySelector('.alert').remove() || false; 
+        if (doc.querySelector('.alert')) return doc.querySelector('.alert').remove(); 
     }, 2500);
 };
 
 
-// EventListener on 'searchForm', initializes search functionality
-searchForm.addEventListener('submit', searchWiki);
+// CORE FUNCTIONS
+// FUNCTION - check searchInput isn't empty or just whitespace(s)
+const validateQueryText = (queryText) => {
+    if (!queryText || (/^\s+$/).test(queryText)) {
+        return showAlert('Please enter a search query');
+    }
+
+    return queryText;
+};
+
+// FUNCTION - GET data from Wikipedia => response to 'checkResponse' func.
+const makeRequest = (queryText) => {
+    const url = {
+        origin: 'https://en.wikipedia.org',
+        path: '/w/api.php',
+        query: `?action=query&origin=*&list=search&format=json&srsearch=${queryText}`
+    };
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `${url.origin}${url.path}${url.query}`, true);
+    xhr.onload = () => {
+        if (xhr.status !== 200) return showAlert();
+        const response = JSON.parse(xhr.responseText);
+        return checkResponse(response);
+    };
+    xhr.onerror = error => showAlert();
+    
+    xhr.send();
+};
+
+// FUNCTION - check for empty response => relevant data to 'printResults' func.
+const checkResponse = (rawResponse) => {
+    const data = rawResponse.query.search;
+    if (data.length < 1) {
+        return showAlert('No results found - please try another search query')
+    }
+    return printResults(data);
+};
+
+// // FUNCTION - create elements to display data & append these to DOM
+const printResults = (data) => {
+    // use documentFragment to only update DOM once
+    const fragment = doc.createDocumentFragment();
+
+    data.map(item => {
+        const resultDiv = newElement('div', 'result-div');
+        const resultTitle = newElement('h3', 'title');
+        const resultLink = newElement('a', 'result-link');      
+        const resultBody = newElement('p', 'result-body');
+        const resultWordCount = newElement('p', 'result-word-count');           
+
+        resultLink.href = `https://en.wikipedia.org/wiki/${item.title.replace(/\s/, '_')}`;
+        resultLink.target = "_blank";
+        resultLink.textContent = item.title;
+
+        resultBody.innerHTML = `${item.snippet}...`;
+        resultWordCount.innerHTML = `<em>Article Word Count:</em> ${item.wordcount}`; 
+
+        resultTitle.appendChild(resultLink);
+        resultDiv.appendChild(resultTitle);
+        resultDiv.appendChild(resultBody);
+        resultDiv.appendChild(resultWordCount);
+        // Append resultDiv to documentFragment
+        fragment.appendChild(resultDiv);
+    });
+
+    // Clear past search results if any & append Document Fragment to DOM
+    if (sectionResults.hasChildNodes()) clearPastResults();
+    sectionResults.appendChild(fragment);
+};
+
+
+// EventListener on 'searchForm'. Initializes program
+searchForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    // validate searchInput isn't empty. Make request if valid
+    const queryText = searchInput.value;
+    if (validateQueryText(queryText)) return makeRequest(queryText);
+});
