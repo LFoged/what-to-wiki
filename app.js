@@ -2,7 +2,7 @@
 
 
 /** 
- * TODO: 
+ * TODO:
  * 'Suggested query' button / search if no results. 
  * 'clear search' / 'new search button'
 */
@@ -75,34 +75,36 @@ const makeRequest = (queryText) => {
 
 // FUNCTION - check for empty response => relevant data to 'printResults' func.
 const checkResponse = (rawResponse) => {
-    const data = rawResponse.query.search;
-    if (data.length < 1) {
-        return showAlert('No results found - please try another search query')
+    
+    console.log(rawResponse);
+
+    const results = rawResponse.query.search;
+    if (results.length < 1) {
+        return showAlert('No matching results found - try another query')
     }
-    return printResults(data);
+
+    return printResults(results);
 };
 
 // // FUNCTION - create elements to display data & append these to DOM
-const printResults = (data) => {
+const printResults = (results) => {
     // use documentFragment to only update DOM once
     const fragment = doc.createDocumentFragment();
 
-    data.map(item => {
+    results.map(result => {
         const resultDiv = newElement('div', 'result-div');
-        const resultTitle = newElement('h3', 'title');
         const resultLink = newElement('a', 'result-link');      
         const resultBody = newElement('p', 'result-body');
         const resultWordCount = newElement('p', 'result-word-count');           
 
-        resultLink.href = `https://en.wikipedia.org/wiki/${item.title.replace(/\s/, '_')}`;
+        resultLink.href = `https://en.wikipedia.org/wiki/${result.title.replace(/\s/, '_')}`;
         resultLink.target = "_blank";
-        resultLink.textContent = item.title;
+        resultLink.textContent = result.title;
 
-        resultBody.innerHTML = `${item.snippet}...`;
-        resultWordCount.innerHTML = `<em>Article Word Count:</em> ${item.wordcount}`; 
+        resultBody.innerHTML = `${result.snippet}...`;
+        resultWordCount.innerHTML = `<em>Article Word Count:</em> ${result.wordcount}`; 
 
-        resultTitle.appendChild(resultLink);
-        resultDiv.appendChild(resultTitle);
+        resultDiv.appendChild(resultLink);
         resultDiv.appendChild(resultBody);
         resultDiv.appendChild(resultWordCount);
         // Append resultDiv to documentFragment
