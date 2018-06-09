@@ -66,7 +66,7 @@ const makeRequest = (queryText) => {
     xhr.onload = () => {
         if (xhr.status !== 200) return showAlert();
         const response = JSON.parse(xhr.responseText);
-        return checkResponse(response);
+        return prepResponse(response);
     };
     xhr.onerror = error => showAlert();
     
@@ -74,22 +74,49 @@ const makeRequest = (queryText) => {
 };
 
 // FUNCTION - check for empty response => relevant data to 'printResults' func.
-const checkResponse = (rawResponse) => {
-    
-    console.log(rawResponse);
+const prepResponse = (rawResponse) => {
+    const response = rawResponse.query;
+    // clear results from past searches if any present
+    if (sectionResults.hasChildNodes()) clearPastResults();
+    if (response.search.length > 0) {
+        const data = {
+            query: searchInput.value,
+            results: [...response.search],
+            hits: response.searchinfo.totalhits
+        };
 
-    const results = rawResponse.query.search;
-    if (results.length < 1) {
-        return showAlert('No matching results found - try another query')
+        return printResults(data);
+    }
+    if (response.searchinfo.suggestion) {
+        printSuggestion(response.searchinfo.suggestion);
     }
 
-    return printResults(results);
+    return showAlert(`Found no matching results for "${searchInput.value}"`);
 };
 
-// // FUNCTION - create elements to display data & append these to DOM
-const printResults = (results) => {
+// FUNCTION - print suggested query if any returned
+const printSuggestion = (suggestion) => {
+    const suggestDiv = newElement('div', 'suggest-div');
+    const suggestQuery = newElement('span', 'suggest-query');
+
+    suggestQuery.textContent = `${suggestion}`;
+    suggestDiv.appendChild(doc.createTextNode(`Suggested query: `));
+    suggestDiv.appendChild(suggestQuery);
+    
+    return sectionResults.appendChild(suggestDiv);
+};
+
+
+// FUNCTION - create elements to display data & append these to DOM
+const printResults = (data) => {
+    const query = data.query;
+    const results = data.results;
+    const hits = data.hits;
     // use documentFragment to only update DOM once
     const fragment = doc.createDocumentFragment();
+    const resultStats = newElement('h4', 'result-stats');
+    resultStats.textContent = `Showing ${results.length} results of ${hits} total hits for "${query}"`;
+    fragment.appendChild(resultStats);
 
     results.map(result => {
         const resultDiv = newElement('div', 'result-div');
@@ -100,7 +127,6 @@ const printResults = (results) => {
         resultLink.href = `https://en.wikipedia.org/wiki/${result.title.replace(/\s/, '_')}`;
         resultLink.target = "_blank";
         resultLink.textContent = result.title;
-
         resultBody.innerHTML = `${result.snippet}...`;
         resultWordCount.innerHTML = `<em>Article Word Count:</em> ${result.wordcount}`; 
 
@@ -108,19 +134,29 @@ const printResults = (results) => {
         resultDiv.appendChild(resultBody);
         resultDiv.appendChild(resultWordCount);
         // Append resultDiv to documentFragment
-        fragment.appendChild(resultDiv);
-    });
+        return fragment.appendChild(resultDiv);
+    }); 
 
-    // Clear past search results if any & append Document Fragment to DOM
-    if (sectionResults.hasChildNodes()) clearPastResults();
-    sectionResults.appendChild(fragment);
+    return sectionResults.appendChild(fragment);
 };
 
 
-// EventListener on 'searchForm'. Initializes program
-searchForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    // validate searchInput isn't empty. Make request if valid
-    const queryText = searchInput.value;
-    if (validateQueryText(queryText)) return makeRequest(queryText);
-});
+// FUNCTION - initialize program with eventListeners
+const init = (() => {
+    searchForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        // validate searchInput isn't empty. Make request if valid
+        const queryText = searchInput.value;
+        if (validateQueryText(queryText)) return makeRequest(queryText);
+    });
+
+    sectionResults.addEventListener('click', (event) => {
+        if (event.target.className.includes('suggest')) {
+            const suggestQuery = doc.querySelector('.suggest-query').textContent;
+            searchInput.value = suggestQuery;
+            
+            return makeRequest(suggestQuery);
+        }
+    });
+})();
+
