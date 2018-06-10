@@ -66,7 +66,7 @@ a:active {
 }
 
 .search-input::placeholder {
-    color: black;
+    color: rgb(32, 32, 32);
     transition: ease-in-out 0.25s;
 }
 /* Input field's placeholder - smaller font-size font when in focus*/
@@ -79,8 +79,7 @@ a:active {
 }
 
 .btn {
-    font-size: 1.2rem;
-    color: white;
+    font-size: 1.1rem;
     outline: none;
     cursor: pointer;
     transition: ease-out 0.2s;
@@ -99,45 +98,67 @@ a:active {
     transform: scale(1.3);
 }
 
-.btn-random {
+.btn-random,
+.btn-new-search {
+    color: white;
     background-color: transparent;
-    padding: 0.5rem 3rem;
+    padding: .6rem 2rem;
     border: 0.05rem solid white;
     border-radius: 0.31rem;
     margin: 0.5rem 1rem;
 }
 
 .btn-random:hover,
-.btn-random:active {
+.btn-random:active,
+.btn-new-search:hover,
+.btn-new-search:active {
     color: #5691c8;
     background-color: white;
 }
 
 .section-results {
-    margin: 3rem 2rem 3.5rem 2rem;
+    margin: 2.5rem 1.5rem 2rem;
 }
 
-.result-div {
-    margin: 1rem 1.5rem;
+.result-div,
+.suggest-div {
+    margin: .3rem 1.5rem;
     padding: 1rem 1.5rem;
 }
 
-.result-link {
-    display: block;
-    font-size: 1.1rem;
-    font-weight: 500;
+.result-stats {
+    font-size: .95rem;
+    color: rgb(32, 32, 32);
+    margin: 0 1.5rem;
+    text-align: center
+}
 
+.result-link,
+.suggest-div {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 500;
     color: whitesmoke;
 }
 
 .result-body {
     font-size: 1.05rem;
+    color: rgb(32, 32, 32);
     padding: 0.3rem 0;
 }
 
 .result-word-count {
-    font-size: 0.9rem;
+    font-size: .9rem;
     font-weight: bold;
+    color: rgb(32, 32, 32);
+}
+
+.suggest-query {
+    color: darkblue;
+}
+
+.suggest-query:hover {
+    text-decoration: underline;
 }
 
 .alert {
