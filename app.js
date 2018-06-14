@@ -18,11 +18,11 @@ const newElement = (element, classNm) => {
 };
 
 // FUNCTION - remove  past results, if present - NOTE: recursion, not 'while' 
-const clearPastResults = () => {
-    if (sectionResults.hasChildNodes()) {
-        sectionResults.removeChild(sectionResults.firstChild);
+const removeChildNodes = (element) => {
+    if (element.hasChildNodes()) {
+        element.removeChild(element.firstChild);
 
-        return clearPastResults();
+        return removeChildNodes(element);
     }
 };
 
@@ -31,7 +31,7 @@ const toggleNewSearchBtn = () => newSearchBtn.hidden = !newSearchBtn.hidden;
 
 // FUNCTION - clear past results, hide 'new-search' button, clear & focus on input field
 const newSearch = () => {
-    clearPastResults();
+    removeChildNodes(sectionResults);
     toggleNewSearchBtn();
     searchInput.value = '';
     searchInput.focus();
@@ -83,7 +83,7 @@ const makeRequest = (queryText) => {
 const prepResponse = (rawResponse) => {
     const response = rawResponse.query;
     // clear results from past searches if any present
-    if (sectionResults.hasChildNodes()) clearPastResults();
+    if (sectionResults.hasChildNodes()) removeChildNodes(sectionResults);
     if (response.search.length > 0) {
         const data = {
             query: searchInput.value,
@@ -155,7 +155,7 @@ const init = (() => {
     searchForm.addEventListener('submit', (event) => {
         event.preventDefault();
         // validate searchInput isn't empty. Make request if valid
-        const queryText = searchInput.value;
+        const queryText = searchInput.value.trim();
         if (validateQueryText(queryText)) return makeRequest(queryText);
     });
     newSearchBtn.addEventListener('click', newSearch);
