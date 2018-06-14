@@ -155,6 +155,7 @@ a:active {
 
 .suggest-query {
     color: darkblue;
+    cursor: pointer;
 }
 
 .suggest-query:hover {

@@ -17,10 +17,12 @@ const newElement = (element, classNm) => {
     return newEl;
 };
 
-// FUNCTION - clear past result from DOM, if present
+// FUNCTION - remove  past results, if present - NOTE: recursion, not 'while' 
 const clearPastResults = () => {
-    while (sectionResults.hasChildNodes()) {
+    if (sectionResults.hasChildNodes()) {
         sectionResults.removeChild(sectionResults.firstChild);
+
+        return clearPastResults();
     }
 };
 
