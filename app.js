@@ -10,11 +10,10 @@ const dom = Object.freeze({
   }),
 
   // Method - create element, assign className and attributes & values
-  makeEl: (element, classNm, attr=undefined, val=undefined) => {
+  makeEl: (element, classNm, attr, val) => {
     const newEl = document.createElement(element);
     newEl.className = classNm;
     if (attr && val) attr.map((item, index) => newEl[item] = val[index]);
-  
     return newEl;
   },
 
@@ -25,8 +24,7 @@ const dom = Object.freeze({
   // Method - remove all child nodes of a DOM element
   removeChildren: (element) => {
     if (element.hasChildNodes()) {
-      element.removeChild(element.firstChild);
-      
+      element.removeChild(element.firstChild);    
       return dom.removeChildren(element);
     }
   },
@@ -47,7 +45,6 @@ const dom = Object.freeze({
 
   printResults: (data, makeEl, appendChildren) => {
     const fragment = document.createDocumentFragment();
-
     if (!data.articles) {
       const resultDiv = makeEl('div', 'result__div');
       const title = makeEl('h3', 'title', ['textContent'], ['Suggested: ']);
@@ -77,16 +74,12 @@ const dom = Object.freeze({
         const queryMore = makeEl(
           'span', 'find-more', ['textContent'],[`Find More >>`]
         );
-
         wordCount.appendChild(queryMore);
         appendChildren(resultDiv, [title, snippet, wordCount]);
-        
         return fragment.appendChild(resultDiv);
       });
-
       fragment.insertBefore(stats, fragment.firstChild);
     }
-
     dom.elements.newSearchBtn.hidden = false;
     dom.elements.resultSection.appendChild(fragment);
   },
@@ -106,18 +99,15 @@ const checkInput = (inputText, alerter) => {
   if (inputText.length > 0 && (/^\s+$/).test(inputText)) {
     return alerter('Please enter a search query');
   }
-
   return inputText.trim();
 };
 
 // Function - fetch data from Wikipedia API for query text
 const makeRequest = (queryText, alerter) => {
   const url = `https://en.wikipedia.org/w/api.php?action=query&origin=*&list=search&format=json&srsearch=${queryText}`;
-  try {
-    return fetch(url, {mode: 'cors'}).then(response => response.json());
-  } catch (err) {
-    return alerter('Bummer! Problem with the request');
-  }  
+    return fetch(url, {mode: 'cors'})
+      .then(response => response.json())
+      .catch(err => alerter());
 };
 
 // Function - Check whether any data returned
@@ -126,7 +116,6 @@ const filterResponse = (response) => {
   const articles = response.search;
   const suggest = response.searchinfo.suggestion;
   if (articles.length < 1 && suggest) return {hits, suggest};
-  
   return {hits, articles};
 };
 
