@@ -1,174 +1,160 @@
 'use strict';
 
-// GLOBAL VARIABLES - 'doc' = document', for brevity
-const doc = document;
-const searchForm = doc.querySelector('.search-form');
-const searchInput = doc.querySelector('.search-input');
-const newSearchBtn = doc.querySelector('.btn-new-search');
-const sectionResults = doc.querySelector('.section-results');
+/** DOM RELATED ELEMENTS & FUNCTIONS (methods) **/
+const dom = Object.freeze({
+  elements: Object.freeze({
+    input: document.querySelector('.search-input'),
+    newSearchBtn: document.querySelector('.btn-new-search'),
+    searchSection: document.querySelector('.section__search'),
+    resultSection: document.querySelector('.section__results')
+  }),
 
-
-// PERIPHERAL FUNCTIONS
-// FUNCTION - create element, assign className & other attribute
-const newElement = (element, classNm) => {
-    const newEl = doc.createElement(element);
+  // Method - create element, assign className and attributes & values
+  makeEl: (element, classNm, attr=undefined, val=undefined) => {
+    const newEl = document.createElement(element);
     newEl.className = classNm;
-
+    if (attr && val) attr.map((item, index) => newEl[item] = val[index]);
+  
     return newEl;
-};
+  },
 
-// FUNCTION - remove  past results, if present - NOTE: recursion, not 'while' 
-const removeChildNodes = (element) => {
+  appendChildren: (parent, children) => {
+    return children.map((child) => parent.appendChild(child));
+  },
+
+  // Method - remove all child nodes of a DOM element
+  removeChildren: (element) => {
     if (element.hasChildNodes()) {
-        element.removeChild(element.firstChild);
-
-        return removeChildNodes(element);
+      element.removeChild(element.firstChild);
+      
+      return dom.removeChildren(element);
     }
-};
+  },
 
-// FUNCTION - toggle 'new-search' btn, between hidden / visible
-const toggleNewSearchBtn = () => newSearchBtn.hidden = !newSearchBtn.hidden;
+  // Method - add an alert message to DOM
+  showAlert: (msg='Aww shucks! Something went wrong') => {
+    if (!document.querySelector('.alert-div')) {
+      const alertDiv = dom.makeEl('div', 'alert-div');
+      const message = dom.makeEl('h3', 'alert-msg', ['textContent'], [msg]);
+      alertDiv.appendChild(message);
 
-// FUNCTION - clear past results, hide 'new-search' button, clear & focus on input field
-const newSearch = () => {
-    removeChildNodes(sectionResults);
-    toggleNewSearchBtn();
-    searchInput.value = '';
-    searchInput.focus();
-};
-
-// FUNCTION - display error alert messages
-const showAlert = (message='Aww shucks! Something went wrong') => {
-    const alertDiv = newElement('div', 'alert');
-    alertDiv.appendChild(doc.createTextNode(message));
-    // attach alert to DOM if none already present
-    if (!doc.querySelector('.alert')) searchForm.insertBefore(alertDiv, searchInput);
-    // Timeout to remove alert after 2.7s, if present
-    setTimeout(() => {
-        if (doc.querySelector('.alert')) return doc.querySelector('.alert').remove(); 
-    }, 2700);
-};
-
-
-// CORE FUNCTIONS
-// FUNCTION - check searchInput isn't empty or just whitespace(s)
-const validateQueryText = (queryText) => {
-    if (!queryText || (/^\s+$/).test(queryText)) {
-        return showAlert('Please enter a search query');
+      dom.elements.searchSection.insertBefore(alertDiv, dom.elements.input);
+      setTimeout(() => {
+        document.querySelector('.alert-div').remove();
+      }, 2700);
     }
+  },
 
-    return queryText;
-};
+  printResults: (data, makeEl, appendChildren) => {
+    const fragment = document.createDocumentFragment();
 
-// FUNCTION - GET data from Wikipedia => response to 'checkResponse' func.
-const makeRequest = (queryText) => {
-    const url = {
-        origin: 'https://en.wikipedia.org',
-        path: '/w/api.php',
-        query: `?action=query&origin=*&list=search&format=json&srsearch=${queryText}`
-    };
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', `${url.origin}${url.path}${url.query}`, true);
-    xhr.onload = () => {
-        if (xhr.status !== 200) return showAlert();
-        const response = JSON.parse(xhr.responseText);
-        return prepResponse(response);
-    };
-    xhr.onerror = error => showAlert();
-    
-    xhr.send();
-};
+    if (!data.articles) {
+      const resultDiv = makeEl('div', 'result__div');
+      const title = makeEl('h3', 'title', ['textContent'], ['Suggested: ']);
+      const query = makeEl('span', 'suggest', ['textContent'], [data.suggest]);
+      title.appendChild(query);
+      resultDiv.appendChild(title);
+      fragment.appendChild(resultDiv);
+    } else {
+      const { hits, queryText, articles } = data;
+      const stats = dom.makeEl('p', 'stats', ['textContent'],
+        [`Showing ${articles.length} of ${hits} hits for "${queryText}"`]
+      );
 
-// FUNCTION - check for empty response => relevant data to 'printResults' func.
-const prepResponse = (rawResponse) => {
-    const response = rawResponse.query;
-    // clear results from past searches if any present
-    if (sectionResults.hasChildNodes()) removeChildNodes(sectionResults);
-    if (response.search.length > 0) {
-        const data = {
-            query: searchInput.value,
-            results: [...response.search],
-            hits: response.searchinfo.totalhits
-        };
+      articles.map((article) => {
+        const resultDiv = makeEl('div', 'result__div');
+        const hrefEnd = article.title.replace(/\s/, '_');
+        const title = makeEl(
+          'a', 'title article-link query', ['href', 'target', 'textContent'],[`https://en.wikipedia.org/wiki/${hrefEnd}`,'_blank', article.title]
+        );
+        const snippet = makeEl(
+          'p', 'snippet', ['innerHTML'], [`${article.snippet}...`]
+        );
+        const wordCount = makeEl(
+          'p', 'word-count', ['textContent'], 
+          [`Article Word Count: ${article.wordcount}`]
+        );
+        const queryMore = makeEl(
+          'span', 'find-more', ['textContent'],[`Find More >>`]
+        );
 
-        return printResults(data);
-    }
-    // 'suggestion' prop. only exists if 0 hits on query & wiki has a suggestion
-    if (response.searchinfo.suggestion) {
-        printSuggestion(response.searchinfo.suggestion);
-    }
-
-    return showAlert(`Found no matching results for "${searchInput.value}"`);
-};
-
-// FUNCTION - print suggested query if any returned
-const printSuggestion = (suggestion) => {
-    const suggestDiv = newElement('div', 'suggest-div');
-    const suggestQuery = newElement('span', 'suggest-query');
-
-    suggestQuery.textContent = `${suggestion}`;
-    suggestDiv.appendChild(doc.createTextNode(`Did you mean: `));
-    suggestDiv.appendChild(suggestQuery);
-    toggleNewSearchBtn();
-    
-    return sectionResults.appendChild(suggestDiv);
-};
-
-// FUNCTION - create elements to display data & append these to DOM
-const printResults = (data) => {
-    const query = data.query;
-    const results = data.results;
-    const hits = data.hits;
-    // use documentFragment to only update DOM once
-    const fragment = doc.createDocumentFragment();
-    const resultStats = newElement('p', 'result-stats');
-    resultStats.textContent = 
-        `Showing ${results.length} results of ${hits} total hits for query: "${query}"`;
-    fragment.appendChild(resultStats);
-
-    results.map(result => {
-        const resultDiv = newElement('div', 'result-div');
-        const resultLink = newElement('a', 'result-link');      
-        const resultBody = newElement('p', 'result-body');
-        const resultWordCount = newElement('p', 'result-word-count');           
-
-        resultLink.href = `https://en.wikipedia.org/wiki/${result.title.replace(/\s/, '_')}`;
-        resultLink.target = "_blank";
-        resultLink.textContent = result.title;
-        resultBody.innerHTML = `${result.snippet}...`;
-        resultWordCount.textContent = `Article Word Count: ${result.wordcount}`; 
-        // Append child el.s -> resultDiv -> resultDiv to documentFragment -> fragment to DOM
-        resultDiv.appendChild(resultLink);
-        resultDiv.appendChild(resultBody);
-        resultDiv.appendChild(resultWordCount);
-
+        wordCount.appendChild(queryMore);
+        appendChildren(resultDiv, [title, snippet, wordCount]);
+        
         return fragment.appendChild(resultDiv);
-    });
-    toggleNewSearchBtn();
+      });
 
-    return sectionResults.appendChild(fragment);
+      fragment.insertBefore(stats, fragment.firstChild);
+    }
+
+    dom.elements.newSearchBtn.hidden = false;
+    dom.elements.resultSection.appendChild(fragment);
+  },
+
+  newSearch: () => {
+    dom.removeChildren(dom.elements.resultSection);
+    dom.elements.newSearchBtn.hidden = true;
+    dom.elements.input.value = '';
+    dom.elements.input.focus();
+  }
+});
+
+
+/** CORE FUNCTIONS **/
+// Function - check queryText not blank / whitespace
+const checkInput = (inputText, alerter) => {
+  if (inputText.length > 0 && (/^\s+$/).test(inputText)) {
+    return alerter('Please enter a search query');
+  }
+
+  return inputText.trim();
+};
+
+// Function - fetch data from Wikipedia API for query text
+const makeRequest = (queryText, alerter) => {
+  const url = `https://en.wikipedia.org/w/api.php?action=query&origin=*&list=search&format=json&srsearch=${queryText}`;
+  try {
+    return fetch(url, {mode: 'cors'}).then(response => response.json());
+  } catch (err) {
+    return alerter('Bummer! Problem with the request');
+  }  
+};
+
+// Function - Check whether any data returned
+const filterResponse = (response) => {
+  const hits = response.searchinfo.totalhits;
+  const articles = response.search;
+  const suggest = response.searchinfo.suggestion;
+  if (articles.length < 1 && suggest) return {hits, suggest};
+  
+  return {hits, articles};
 };
 
 
-// FUNCTION - initialize program with eventListeners
-const init = (() => {
-    searchForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        // validate searchInput isn't empty. Make request if valid
-        const queryText = searchInput.value.trim();
-        if (validateQueryText(queryText)) return makeRequest(queryText);
-    });
-    newSearchBtn.addEventListener('click', newSearch);
-    // 
-    sectionResults.addEventListener('click', (event) => {
-        if (event.target.className === ('suggest-query')) {
-            const suggestQuery = doc.querySelector('.suggest-query').textContent;
-            searchInput.value = suggestQuery;
-            // hide 'new-search' btn so it appears when new results printed
-            toggleNewSearchBtn();
-            
-            return makeRequest(suggestQuery);
-        }
-    });
-})();
+// Function - main controller function
+const ctrl = async (text, checkText, makeRequest, filter, dom) => {
+  const queryText = checkText(text, dom.showAlert);
+  if (queryText) {
+    const rawResponse = await makeRequest(queryText, dom.showAlert);
+    const data = filter(rawResponse.query);
+    if (data.hits < 1) dom.showAlert(`No results for "${queryText}"`);
+    dom.removeChildren(dom.elements.resultSection);
+    dom.printResults({...data, queryText}, dom.makeEl, dom.appendChildren);
+  }
+};
 
+// Event listeners
+dom.elements.input.addEventListener('keyup', (e) => {
+  ctrl(e.target.value, checkInput, makeRequest, filterResponse, dom)
+});
+dom.elements.newSearchBtn.addEventListener('click', dom.newSearch);
+dom.elements.resultSection.addEventListener('click', (e) => {
+  if (e.target.className === 'suggest' || e.target.className === 'find-more') {
+    let text;
+    e.target.className === 'find-more' 
+      ? text = e.target.parentElement.parentElement.firstChild.textContent
+      : text = e.target.textContent;
+    dom.elements.input.value = text;
+    ctrl(text, checkInput, makeRequest, filterResponse, dom);
+  }
+});

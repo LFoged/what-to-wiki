@@ -1,34 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="./css/style.css">
-    <link rel="icon" href="./assets/searchIcon.png" type="image/png">
-    <title>Wiki Viewer</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="icon" href="./assets/searchIcon.png" type="img/png">
+  <link rel="stylesheet" href="./css/style.css">
+  <title>Wiki-ya-wanna-know</title>
 </head>
 <body>
-    <div class="container">
-        <main>
-            <section class="section-search">
-                <form class="search-form" autocomplete="off">
-                    <input class="search-input" type="text" placeholder="Search Wikipedia">
-                    <button class="btn btn-search" type="submit">
-                        <img src="./assets/searchIcon.png" alt="magnifying glass">
-                    </button>
-                </form>
-                
-                <button class="btn btn-new-search" hidden>New Search</button>
-                <a href="https://en.wikipedia.org/wiki/Special:Random" target="_blank">
-                    <button class="btn btn-random">Random Wiki</button>
-                </a>
-            </section>
-        
-            <section class="section-results"></section>
-        </main>
-    </div>
+  <div class="container">
+    <main>
+      <section class="section__search">
+        <input class="search-input" type="text" placeholder="Search Wikipedia">
+        <button class="btn btn-new-search" hidden>New Search</button>
+        <a href="https://en.wikipedia.org/wiki/Special:Random" target="_blank">
+          <button class="btn btn-random-wiki">Random Wiki</button>
+        </a>
+      </section>
 
-    <script src="app.js"></script>
+      <section class="section__results"></section>
+    </main>
+  </div>
+  
+  <script src="./app.js"></script>
 </body>
 </html>
