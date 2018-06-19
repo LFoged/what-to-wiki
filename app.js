@@ -1,14 +1,14 @@
 'use strict';
 
-/** DOM RELATED ELEMENTS & FUNCTIONS (methods) **/
-const dom = Object.freeze({
-  elements: Object.freeze({
+/** DOM-RELATED ELEMENTS & FUNCTIONS **/
+const Dom = Object.freeze({
+  // DOM Elements
+  els: Object.freeze({
     input: document.querySelector('.search-input'),
     newSearchBtn: document.querySelector('.btn-new-search'),
     searchSection: document.querySelector('.section__search'),
     resultSection: document.querySelector('.section__results')
   }),
-
   // Method - create element, assign className and attributes & values
   makeEl: (element, classNm, attr, val) => {
     const newEl = document.createElement(element);
@@ -16,34 +16,33 @@ const dom = Object.freeze({
     if (attr && val) attr.map((item, index) => newEl[item] = val[index]);
     return newEl;
   },
-
-  appendChildren: (parent, children) => {
+  // Method - append multiple child nodes to single parent element
+  appendKids: (parent, children) => {
     return children.map((child) => parent.appendChild(child));
   },
-
   // Method - remove all child nodes of a DOM element
-  removeChildren: (element) => {
+  removeKids: (element, removeKids) => {
     if (element.hasChildNodes()) {
       element.removeChild(element.firstChild);    
-      return dom.removeChildren(element);
+      return Dom.removeKids(element);
     }
   },
-
-  // Method - add an alert message to DOM
-  showAlert: (msg='Aww shucks! Something went wrong') => {
+  // Method - display an alert message to DOM
+  errAlert: (msg='Aww shucks! Something went wrong') => {
+    const {makeEl, els} = Dom;
     if (!document.querySelector('.alert-div')) {
-      const alertDiv = dom.makeEl('div', 'alert-div');
-      const message = dom.makeEl('h3', 'alert-msg', ['textContent'], [msg]);
+      const alertDiv = makeEl('div', 'alert-div');
+      const message = makeEl('h3', 'alert-msg', ['textContent'], [msg]);
       alertDiv.appendChild(message);
-
-      dom.elements.searchSection.insertBefore(alertDiv, dom.elements.input);
+      // Remove alertDiv from DOm after 2.7s
+      els.searchSection.insertBefore(alertDiv, els.input);
       setTimeout(() => {
         document.querySelector('.alert-div').remove();
       }, 2700);
     }
   },
-
-  printResults: (data, makeEl, appendChildren) => {
+  // Method - print final results to DOM (both found articles & suggestions)
+  print: (data, els, makeEl, appendKids) => {
     const fragment = document.createDocumentFragment();
     if (!data.articles) {
       const resultDiv = makeEl('div', 'result__div');
@@ -53,8 +52,8 @@ const dom = Object.freeze({
       resultDiv.appendChild(title);
       fragment.appendChild(resultDiv);
     } else {
-      const { hits, queryText, articles } = data;
-      const stats = dom.makeEl('p', 'stats', ['textContent'],
+      const {hits, queryText, articles} = data;
+      const stats = makeEl('p', 'stats', ['textContent'],
         [`Showing ${articles.length} of ${hits} hits for "${queryText}"`]
       );
 
@@ -72,78 +71,81 @@ const dom = Object.freeze({
           [`Article Word Count: ${article.wordcount}`]
         );
         const queryMore = makeEl(
-          'span', 'find-more', ['textContent'],[`Find More >>`]
+          'span', 'more', ['textContent'],[`Find More >>`]
         );
         wordCount.appendChild(queryMore);
-        appendChildren(resultDiv, [title, snippet, wordCount]);
+        appendKids(resultDiv, [title, snippet, wordCount]);
         return fragment.appendChild(resultDiv);
       });
       fragment.insertBefore(stats, fragment.firstChild);
     }
-    dom.elements.newSearchBtn.hidden = false;
-    dom.elements.resultSection.appendChild(fragment);
+    els.newSearchBtn.hidden = false;
+    els.resultSection.appendChild(fragment);
   },
-
-  newSearch: () => {
-    dom.removeChildren(dom.elements.resultSection);
-    dom.elements.newSearchBtn.hidden = true;
-    dom.elements.input.value = '';
-    dom.elements.input.focus();
+  // Method - clear results, hide 'newSearchBtn' & focus on input field
+  newSearch: (els, removeKids) => {
+    removeKids(els.resultSection);
+    els.newSearchBtn.hidden = true;
+    els.input.value = '';
+    els.input.focus();
   }
 });
 
 
-/** CORE FUNCTIONS **/
-// Function - check queryText not blank / whitespace
-const checkInput = (inputText, alerter) => {
-  if (inputText.length > 0 && (/^\s+$/).test(inputText)) {
-    return alerter('Please enter a search query');
-  }
-  return inputText.trim();
-};
-
-// Function - fetch data from Wikipedia API for query text
-const makeRequest = (queryText, alerter) => {
-  const url = `https://en.wikipedia.org/w/api.php?action=query&origin=*&list=search&format=json&srsearch=${queryText}`;
+/** DATA-RELATED FUNCTIONS **/
+const Data = Object.freeze({
+  // Method - check that input field isn't full of whitespace
+  checkInput: (input, errAlert) => {
+    if (input.length > 0 && (/^\s+$/).test(input)) {
+      return errAlert('Please enter a search query');
+    }
+    return input.trim();
+  },
+  // Method - fetch (GET request) data from Wikipedia API for query text
+  makeRequest: (queryText, errAlert) => {
+    const url = `https://en.wikipedia.org/w/api.php?action=query&origin=*&list=search&format=json&srsearch=${queryText}`;
     return fetch(url, {mode: 'cors'})
       .then(response => response.json())
-      .catch(err => alerter());
-};
-
-// Function - Check whether any data returned
-const filterResponse = (response) => {
-  const hits = response.searchinfo.totalhits;
-  const articles = response.search;
-  const suggest = response.searchinfo.suggestion;
-  if (articles.length < 1 && suggest) return {hits, suggest};
-  return {hits, articles};
-};
-
-
-// Function - main controller function
-const ctrl = async (text, checkText, makeRequest, filter, dom) => {
-  const queryText = checkText(text, dom.showAlert);
-  if (queryText) {
-    const rawResponse = await makeRequest(queryText, dom.showAlert);
-    const data = filter(rawResponse.query);
-    if (data.hits < 1) dom.showAlert(`No results for "${queryText}"`);
-    dom.removeChildren(dom.elements.resultSection);
-    dom.printResults({...data, queryText}, dom.makeEl, dom.appendChildren);
-  }
-};
-
-// Event listeners
-dom.elements.input.addEventListener('keyup', (e) => {
-  ctrl(e.target.value, checkInput, makeRequest, filterResponse, dom)
-});
-dom.elements.newSearchBtn.addEventListener('click', dom.newSearch);
-dom.elements.resultSection.addEventListener('click', (e) => {
-  if (e.target.className === 'suggest' || e.target.className === 'find-more') {
-    let text;
-    e.target.className === 'find-more' 
-      ? text = e.target.parentElement.parentElement.firstChild.textContent
-      : text = e.target.textContent;
-    dom.elements.input.value = text;
-    ctrl(text, checkInput, makeRequest, filterResponse, dom);
+      .catch(err => errAlert());
+  },
+  // Method - check response from request & extract relevant data 
+  filterResponse: (response) => {
+    const hits = response.searchinfo.totalhits;
+    const articles = response.search;
+    const suggest = response.searchinfo.suggestion;
+    if (articles.length < 1 && suggest) return {hits, suggest};
+    return {hits, articles};
   }
 });
+
+
+// Function - initializes program => eventListeners & main control function 
+const init = (() => {
+  const {els, makeEl, appendKids, removeKids, errAlert, print, newSearch} = Dom;
+  const {checkInput, makeRequest, filterResponse} = Data;
+  // Function - main controller function
+  const ctrl = async (input) => {
+    const queryText = checkInput(input, errAlert);
+    if (queryText) {
+      const rawResponse = await makeRequest(queryText, errAlert);
+      const data = filterResponse(rawResponse.query);
+      if (data.hits < 1) errAlert(`No results for "${queryText}"`);
+      removeKids(els.resultSection);
+      print({...data, queryText}, els, makeEl, appendKids);
+    }
+  };
+
+  // Event-listeners (the magic starts here)
+  els.input.addEventListener('keyup', (e) => ctrl(e.target.value));
+  els.newSearchBtn.addEventListener('click', () => newSearch(els, removeKids));
+  els.resultSection.addEventListener('click', (e) => {
+    if (e.target.className === 'suggest' || e.target.className === 'more') {
+      let text;
+      e.target.className === 'more' 
+        ? text = e.target.parentElement.parentElement.firstChild.textContent
+        : text = e.target.textContent;
+      els.input.value = text;
+      ctrl(text);
+    }
+  });
+})();
