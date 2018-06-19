@@ -91,7 +91,6 @@ const Dom = Object.freeze({
   }
 });
 
-
 /** DATA-RELATED FUNCTIONS **/
 const Data = Object.freeze({
   // Method - check that input field isn't full of whitespace
@@ -118,7 +117,6 @@ const Data = Object.freeze({
   }
 });
 
-
 // Function - initializes program => eventListeners & main control function 
 const init = (() => {
   const {els, makeEl, appendKids, removeKids, errAlert, print, newSearch} = Dom;
@@ -134,7 +132,6 @@ const init = (() => {
       print({...data, queryText}, els, makeEl, appendKids);
     }
   };
-
   // Event-listeners (the magic starts here)
   els.input.addEventListener('keyup', (e) => ctrl(e.target.value));
   els.newSearchBtn.addEventListener('click', () => newSearch(els, removeKids));
