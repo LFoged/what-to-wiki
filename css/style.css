@@ -85,25 +85,25 @@ a:visited {
   border: .05rem solid white;
   border-radius: .31rem;
   margin: .5rem .3rem;
-  box-shadow: 0 .5rem .8rem rgba(0,0,0,.2);
+  box-shadow: 0 .5rem .8rem rgba(0,0,0,.3);
 }
 
 .btn-random-wiki:hover,
 .btn-new-search:hover {
   color: #5691c8;
   background-color: white;
-  transform: translateY(-.25rem);
-  box-shadow: 0 1rem 1.5rem rgba(0,0,0,.2);
+  transform: translateY(-.27rem);
+  box-shadow: 0 1.2rem 1.6rem rgba(0,0,0,.2);
 }
 
 .btn-random-wiki:active,
 .btn-new-search:active {
   transform: translateY(-.1rem);
-  box-shadow: 0 .7rem 1rem rgba(0,0,0,.2);
+  box-shadow: 0 .7rem 1rem rgba(0,0,0,.3);
 }
 
 .section__results {
-  margin: 2.5rem 1.5rem 4rem;
+  padding: 2rem 1.5rem 3rem;
 }
 
 .stats {
@@ -133,31 +133,43 @@ a:visited {
   padding: 0.3rem 0;
   line-height: 140%;
   letter-spacing: 0.03rem;
-  margin: .4rem 0; 
+  margin: .5rem 0; 
 }
 
 .word-count {
   font-size: 0.95rem;
   font-weight: bold;
   color: rgb(32, 32, 32);
+  letter-spacing: .02rem;
   margin-bottom: .7rem;
 }
 
 .more {
+  font-size: 1rem;
   color: whitesmoke;
   cursor: pointer;
   font-weight: 500;
   text-align: right;
-  margin: 0.2rem;
+  padding: 0 .6rem;
+  margin: 0 .5rem;
   float: right;
   transition: all ease-out .2s;
 }
 
 .more:hover,
 .article-link:hover {
-  padding-bottom: .2rem;
+  padding-bottom: .25rem;
   border-bottom: .07rem solid whitesmoke;
-  transform: translateY(-.2rem);
+}
+
+.more:hover {
+  transform: translateX(.5rem);
+  box-shadow: 0 .6rem 1rem rgba(0,0,0,.2);
+}
+
+.more:active {
+  transform: translate(.5rem, .08rem);
+  box-shadow: 0 .2rem .5rem rgba(0,0,0,.3);
 }
 
 .suggest {

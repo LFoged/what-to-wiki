@@ -14,6 +14,7 @@ const Dom = Object.freeze({
     const newEl = document.createElement(element);
     newEl.className = classNm;
     if (attr && val) attr.map((item, index) => newEl[item] = val[index]);
+
     return newEl;
   },
   // Method - append multiple child nodes to single parent element
@@ -21,9 +22,10 @@ const Dom = Object.freeze({
     return children.map((child) => parent.appendChild(child));
   },
   // Method - remove all child nodes of a DOM element
-  removeKids: (element, removeKids) => {
+  removeKids: (element) => {
     if (element.hasChildNodes()) {
-      element.removeChild(element.firstChild);    
+      element.removeChild(element.firstChild);
+
       return Dom.removeKids(element);
     }
   },
@@ -34,7 +36,7 @@ const Dom = Object.freeze({
       const alertDiv = makeEl('div', 'alert-div');
       const message = makeEl('h3', 'alert-msg', ['textContent'], [msg]);
       alertDiv.appendChild(message);
-      // Remove alertDiv from DOm after 2.7s
+      // Remove alertDiv from DOM after 2.7s
       els.searchSection.insertBefore(alertDiv, els.input);
       setTimeout(() => {
         document.querySelector('.alert-div').remove();
@@ -43,45 +45,59 @@ const Dom = Object.freeze({
   },
   // Method - print final results to DOM (both found articles & suggestions)
   print: (data, els, makeEl, appendKids) => {
+    // results appended to document fragment later, so DOM only touched once
     const fragment = document.createDocumentFragment();
-    if (!data.articles) {
-      const resultDiv = makeEl('div', 'result__div');
+    // Function - create <div> containing 'suggestion' 
+    const prepSuggestion = (suggestion, makeEl) => {
+      const result = makeEl('div', 'result__div');
       const title = makeEl('h3', 'title', ['textContent'], ['Suggested: ']);
-      const query = makeEl('span', 'suggest', ['textContent'], [data.suggest]);
+      const query = makeEl('span', 'suggest', ['textContent'], [suggestion]);
       title.appendChild(query);
-      resultDiv.appendChild(title);
-      fragment.appendChild(resultDiv);
+      result.appendChild(title);
+
+      return result;
+    };
+    // Function (currying) - create <div> containing data for received article
+    const prepArticle = (article) => (makeEl, appendKids) => {
+      const resultDiv = makeEl('div', 'result__div');
+      const linkEnd = article.title.replace(/\s/, '_');
+      const title = makeEl(
+        'a', 'title article-link query', ['href', 'target', 'textContent'],[`https://en.wikipedia.org/wiki/${linkEnd}`,'_blank', article.title]
+      );
+      const snippet = makeEl(
+        'p', 'snippet', ['innerHTML'], [`${article.snippet}...`]
+      );
+      const wordCount = makeEl(
+        'p', 'word-count', ['textContent'], 
+        [`Article Word Count: ${article.wordcount}`]
+      );
+      const queryMore = makeEl(
+        'span', 'more', ['textContent'],[`More Articles >>`]
+      );
+      wordCount.appendChild(queryMore);
+      appendKids(resultDiv, [title, snippet, wordCount]);
+
+      return resultDiv;
+    };
+    // prep & print, either 'suggestion' or 'articles' & append to fragment
+    if (!data.articles) {
+      fragment.appendChild(prepSuggestion(data.suggest, makeEl));
     } else {
       const {hits, queryText, articles} = data;
       const stats = makeEl('p', 'stats', ['textContent'],
         [`Showing ${articles.length} of ${hits} hits for "${queryText}"`]
       );
-
-      articles.map((article) => {
-        const resultDiv = makeEl('div', 'result__div');
-        const hrefEnd = article.title.replace(/\s/, '_');
-        const title = makeEl(
-          'a', 'title article-link query', ['href', 'target', 'textContent'],[`https://en.wikipedia.org/wiki/${hrefEnd}`,'_blank', article.title]
-        );
-        const snippet = makeEl(
-          'p', 'snippet', ['innerHTML'], [`${article.snippet}...`]
-        );
-        const wordCount = makeEl(
-          'p', 'word-count', ['textContent'], 
-          [`Article Word Count: ${article.wordcount}`]
-        );
-        const queryMore = makeEl(
-          'span', 'more', ['textContent'],[`Find More >>`]
-        );
-        wordCount.appendChild(queryMore);
-        appendKids(resultDiv, [title, snippet, wordCount]);
-        return fragment.appendChild(resultDiv);
+      // currying - prep articles to be appended to fragment
+      const results = articles.map(article => {
+        return prepArticle(article)(makeEl, appendKids);
       });
-      fragment.insertBefore(stats, fragment.firstChild);
+      appendKids(fragment, [stats, ...results]);
     }
     els.newSearchBtn.hidden = false;
-    els.resultSection.appendChild(fragment);
+
+    return els.resultSection.appendChild(fragment);
   },
+
   // Method - clear results, hide 'newSearchBtn' & focus on input field
   newSearch: (els, removeKids) => {
     removeKids(els.resultSection);
@@ -98,6 +114,7 @@ const Data = Object.freeze({
     if (input.length > 0 && (/^\s+$/).test(input)) {
       return errAlert('Please enter a search query');
     }
+
     return input.trim();
   },
   // Method - fetch (GET request) data from Wikipedia API for query text
@@ -113,6 +130,7 @@ const Data = Object.freeze({
     const articles = response.search;
     const suggest = response.searchinfo.suggestion;
     if (articles.length < 1 && suggest) return {hits, suggest};
+
     return {hits, articles};
   }
 });
@@ -128,8 +146,9 @@ const init = (() => {
       const rawResponse = await makeRequest(queryText, errAlert);
       const data = filterResponse(rawResponse.query);
       if (data.hits < 1) errAlert(`No results for "${queryText}"`);
-      removeKids(els.resultSection);
-      print({...data, queryText}, els, makeEl, appendKids);
+      if (els.resultSection.hasChildNodes()) removeKids(els.resultSection);
+      
+      return print({...data, queryText}, els, makeEl, appendKids);
     }
   };
   // Event-listeners (the magic starts here)
