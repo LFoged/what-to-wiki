@@ -33,11 +33,11 @@ const Dom = Object.freeze({
   errAlert: (msg='Aww shucks! Something went wrong') => {
     const {makeEl, els} = Dom;
     if (!document.querySelector('.alert-div')) {
-      const alertDiv = makeEl('div', 'alert-div');
-      const message = makeEl('h3', 'alert-msg', ['textContent'], [msg]);
-      alertDiv.appendChild(message);
+      const alertDivEl = makeEl('div', 'alert-div');
+      const messageEl = makeEl('h3', 'alert-msg', ['textContent'], [msg]);
+      alertDivEl.appendChild(messageEl);
       // Remove alertDiv from DOM after 2.7s
-      els.searchSection.insertBefore(alertDiv, els.input);
+      els.searchSection.insertBefore(alertDivEl, els.input);
       setTimeout(() => {
         document.querySelector('.alert-div').remove();
       }, 2700);
@@ -48,50 +48,50 @@ const Dom = Object.freeze({
     // results appended to document fragment later, so DOM only touched once
     const fragment = document.createDocumentFragment();
     // Function - create <div> containing 'suggestion' 
-    const prepSuggestion = (suggestion, makeEl) => {
-      const result = makeEl('div', 'result__div');
-      const title = makeEl('h3', 'title', ['textContent'], ['Suggested: ']);
-      const query = makeEl('span', 'suggest', ['textContent'], [suggestion]);
-      title.appendChild(query);
-      result.appendChild(title);
+    const prepSuggestion = (suggest, makeEl) => {
+      const resultDivEl = makeEl('div', 'result__div');
+      const titleEl = makeEl('h3', 'title', ['textContent'], ['Suggested: ']);
+      const suggestEl = makeEl('span', 'suggest', ['textContent'], [suggest]);
+      titleEl.appendChild(suggestEl);
+      resultDivEl.appendChild(titleEl);
 
-      return result;
+      return resultDivEl;
     };
     // Function (currying) - create <div> containing data for received article
     const prepArticle = (article) => (makeEl, appendKids) => {
-      const resultDiv = makeEl('div', 'result__div');
+      const resultDivEl = makeEl('div', 'result__div');
       const linkEnd = article.title.replace(/\s/, '_');
-      const title = makeEl(
+      const titleEl = makeEl(
         'a', 'title article-link query', ['href', 'target', 'textContent'],[`https://en.wikipedia.org/wiki/${linkEnd}`,'_blank', article.title]
       );
-      const snippet = makeEl(
+      const snippetEl = makeEl(
         'p', 'snippet', ['innerHTML'], [`${article.snippet}...`]
       );
-      const wordCount = makeEl(
+      const wordCountEl = makeEl(
         'p', 'word-count', ['textContent'], 
         [`Article Word Count: ${article.wordcount}`]
       );
-      const queryMore = makeEl(
+      const moreEl = makeEl(
         'span', 'more', ['textContent'],[`More Articles >>`]
       );
-      wordCount.appendChild(queryMore);
-      appendKids(resultDiv, [title, snippet, wordCount]);
+      wordCountEl.appendChild(moreEl);
+      appendKids(resultDivEl, [titleEl, snippetEl, wordCountEl]);
 
-      return resultDiv;
+      return resultDivEl;
     };
     // prep & print, either 'suggestion' or 'articles' & append to fragment
     if (!data.articles) {
       fragment.appendChild(prepSuggestion(data.suggest, makeEl));
     } else {
       const {hits, queryText, articles} = data;
-      const stats = makeEl('p', 'stats', ['textContent'],
+      const statsEl = makeEl('p', 'stats', ['textContent'],
         [`Showing ${articles.length} of ${hits} hits for "${queryText}"`]
       );
       // currying - prep articles to be appended to fragment
-      const results = articles.map(article => {
+      const resultEls = articles.map(article => {
         return prepArticle(article)(makeEl, appendKids);
       });
-      appendKids(fragment, [stats, ...results]);
+      appendKids(fragment, [statsEl, ...resultEls]);
     }
     els.newSearchBtn.hidden = false;
 
@@ -160,6 +160,8 @@ const init = (() => {
       e.target.className === 'more' 
         ? text = e.target.parentElement.parentElement.firstChild.textContent
         : text = e.target.textContent;
+      // check that 'text' is really a new search term before starting process
+      if (text === els.input.value.trim()) return null;
       els.input.value = text;
       ctrl(text);
     }
