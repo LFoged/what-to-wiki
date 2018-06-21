@@ -144,7 +144,7 @@ a:visited {
   margin-bottom: .7rem;
 }
 
-.more {
+.query-art {
   font-size: 1rem;
   color: whitesmoke;
   cursor: pointer;
@@ -156,29 +156,29 @@ a:visited {
   transition: all ease-out .2s;
 }
 
-.more:hover,
+.query-art:hover,
 .article-link:hover {
   padding-bottom: .25rem;
   border-bottom: .07rem solid whitesmoke;
 }
 
-.more:hover {
+.query-art:hover {
   transform: translateX(.5rem);
   box-shadow: 0 .6rem 1rem rgba(0,0,0,.2);
 }
 
-.more:active {
+.query-art:active {
   transform: translate(.5rem, .08rem);
   box-shadow: 0 .2rem .5rem rgba(0,0,0,.3);
 }
 
-.suggest {
+.query-sug {
   color: rgb(0, 0, 134);
   cursor: pointer;
   transition: all ease-out .2s;
 }
 
-.suggest:hover {
+.query-sug:hover {
   padding-bottom: .2rem;
   border-bottom: .07rem solid rgb(0, 0, 134);
 }

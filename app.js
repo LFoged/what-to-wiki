@@ -64,20 +64,20 @@ const Dom = Object.freeze({
     };
     // Function - create <div> containing 'suggestion'
     const prepSuggestion = (suggest, makeEl) => {
-      const [resultDivEl, titleEl, suggestEl] = makeEl([
+      const [resultDivEl, titleEl, queryEl] = makeEl([
         {el: 'div', cls: 'result__div'},
         {el: 'h3', cls: 'title', attr: ['textContent'], val: ['Suggested: ']},
-        {el: 'span', cls: 'suggest', attr: ['textContent'], val: [suggest]}
+        {el: 'span', cls: 'query-sug', attr: ['textContent'], val: [suggest]}
       ]);
-      titleEl.appendChild(suggestEl);
+      titleEl.appendChild(queryEl);
       resultDivEl.appendChild(titleEl);
 
       return resultDivEl;
     };
-    // Function (currying) - create <div> containing data for received article
+    // Function - create <div> containing data for received article
     const prepArticle = (article) => (makeEl, appendKids) => {
       const articleLink = `https://en.wikipedia.org/wiki/${article.title.replace(/\s/, '_')}`;
-      const [resultDivEl, titleEl, snippetEl, wordCountEl, moreEl] = makeEl([
+      const [resultDivEl, titleEl, snippetEl, wordCountEl, queryEl] = makeEl([
         {el: 'div', cls: 'result__div'},
         {
           el: 'a', cls: 'title article-link',
@@ -91,9 +91,9 @@ const Dom = Object.freeze({
           el: 'p', cls: 'word-count', attr: ['textContent'],
           val: [`Article Word Count: ${article.wordcount}`]
         },
-        {el:'span', cls:'more', attr:['textContent'], val:[`More Articles >>`]}
+        {el:'span', cls:'query-art', attr:['textContent'], val:[`Find More >>`]}
       ]);  
-      wordCountEl.appendChild(moreEl);
+      wordCountEl.appendChild(queryEl);
       appendKids(resultDivEl, [titleEl, snippetEl, wordCountEl]);
 
       return resultDivEl;
@@ -103,7 +103,7 @@ const Dom = Object.freeze({
     if (suggest) {
       fragment.appendChild(prepSuggestion(suggest, makeEl));
     } else {
-      // currying - prep articles to be appended to fragment
+      // prep articles to be appended to fragment
       const resultEls = articles.map(article => {
         return prepArticle(article)(makeEl, appendKids);
       });
@@ -173,15 +173,15 @@ const init = (() => {
   els.input.addEventListener('keyup', (e) => ctrl(e.target.value));
   els.newSearchBtn.addEventListener('click', () => newSearch(els, removeKids));
   els.resultSection.addEventListener('click', (e) => {
-    if (e.target.className === 'suggest' || e.target.className === 'more') {
-      let text;
-      e.target.className === 'more' 
-        ? text = e.target.parentElement.parentElement.firstChild.textContent
-        : text = e.target.textContent;
+    if (e.target.className.includes('query')) {
+      const currentInput = els.input.value.trim();
+      const newInput = e.target.className.includes('art') 
+        ? e.target.parentElement.parentElement.firstChild.textContent
+        : e.target.textContent;
       // only proceed if 'text' is different from current 'input.value'
-      if (text === els.input.value.trim()) return null;
-      els.input.value = text;
-      ctrl(text);
+      if (currentInput === newInput) return null;
+      els.input.value = newInput;
+      ctrl(newInput);
     }
   });
 })();
