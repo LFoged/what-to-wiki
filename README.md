@@ -4,6 +4,10 @@
 Wikipedia search app.
 Uses the Wikipedia API to search for articles, based on user's input (list of matching articles is displayed as user types).
 
+### Status
+- Complete 
+- URL: https://lfoged.github.io/wiki-wanna-know/
+
 ### User stories
 A user can:
 1. enter a search term and see a result list of matching Wikipedia articles (if any), while typing.
