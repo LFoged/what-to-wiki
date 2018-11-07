@@ -1,9 +1,9 @@
 # Wiki-wanna-know
 
+### [See it live](https://lfoged.github.io/wiki-wanna-know/)
 ### Description
 Wikipedia search app.
 Uses the Wikipedia API to search for articles, based on user's input (list of matching articles is displayed as user types).
-### <a href="https://lfoged.github.io/wiki-wanna-know/" target="_blank">See it live</a>
 
 ### User stories
 A user can:
