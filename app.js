@@ -1,7 +1,6 @@
 'use strict';
 
-
-// 'support' functions
+/* 'UTILITY' FUNCTIONS */
 const UTILS = (() => {
   const _doc = document;
 
@@ -35,7 +34,7 @@ const UTILS = (() => {
 })();
 
 
-// functions that directly deal with / 'touch' the DOM
+/* FUNCTIONS THAT DIRECTLY DEAL WITH / TOUCH DOM */
 const DOM = ((UTILS) => {
   const {makeEl, appendKids, removeKids} = UTILS;
 
@@ -105,9 +104,10 @@ const DOM = ((UTILS) => {
 
   // DOM elements
   const els = Object.freeze({
+    main: _doc.querySelector('.main'),
+    container: _doc.querySelector('.container'),
     input: _doc.querySelector('.search-input'),
     newSearchBtn: _doc.querySelector('.btn-new-search'),
-    searchSection: _doc.querySelector('.section__search'),
     resultSection: _doc.querySelector('.section__results')
   });
 
@@ -139,7 +139,7 @@ const DOM = ((UTILS) => {
     if (!_doc.querySelector('.alert-div')) {
       const removeDelay = 2700;
       const alert = _templates.alert(msg);
-      els.searchSection.insertBefore(alert, els.input);
+      els.main.insertBefore(alert, els.container);
       // remove alert from DOM & remove after x secs
       setTimeout(() => {
         _doc.querySelector('.alert-div').remove();
@@ -151,9 +151,9 @@ const DOM = ((UTILS) => {
 })(UTILS);
 
 
-// 'core' data-related functions
+/* FUNCTIONS FOR GETTING & FILTERING DATA */
 const DATA = (() => {
-  // fetch (GET request) data from Wikipedia API
+  // fetch data from Wikipedia API
   const makeRequest = (queryText) => {
     const url = `https://en.wikipedia.org/w/api.php?action=query&origin=*&list=search&format=json&srsearch=${queryText}`;
 
@@ -174,7 +174,7 @@ const DATA = (() => {
 })();
 
 
-// 'peripheral' (don't directly deal with data / DOM) functions
+/* 'PERIPHERAL' FUNCTIONS - don't directly deal with data / DOM */
 const AUX = ((removeKids, els) => {
   const {resultSection, newSearchBtn, input} = els;
 
@@ -195,7 +195,7 @@ const AUX = ((removeKids, els) => {
 })(UTILS.removeKids, DOM.els);
 
 
-// initialize program => eventListeners & main control function 
+/* INITIALIZE PROGRAM - main control & event listeners */
 const init = ((DOM, DATA, AUX) => {
   const {els, errAlert, print} = DOM;
   const {makeRequest, filterResponse} = DATA;
@@ -215,7 +215,7 @@ const init = ((DOM, DATA, AUX) => {
     }
   };
 
-  // Event-listeners (the magic starts here)
+  // event-listeners
   els.input.addEventListener('keyup', (e) => ctrl(e.target.value));
   els.newSearchBtn.addEventListener('click', () => newSearch());
   els.resultSection.addEventListener('click', (e) => {
@@ -224,7 +224,7 @@ const init = ((DOM, DATA, AUX) => {
       const newInput = e.target.className.includes('art') 
         ? e.target.parentElement.parentElement.firstChild.textContent
         : e.target.textContent;
-      // only proceed if 'text' is different from current 'input.value'
+      // only make new search if 'text' !== current 'input.value'
       if (currentInput === newInput) return null;
       els.input.value = newInput;
       ctrl(newInput);
