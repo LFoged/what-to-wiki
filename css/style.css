@@ -103,7 +103,7 @@ a:visited {
 }
 
 .section__results {
-  padding: 2rem 1.5rem 3rem;
+  padding: 2rem .75rem 2rem;
 }
 
 .stats {
@@ -115,7 +115,7 @@ a:visited {
 }
 
 .result__div {
-  margin: 1.3rem 1.5rem;
+  margin: 1.3rem .5rem;
   padding: 1rem 1.5rem;
   box-shadow: 0 .6rem 1rem rgba(0,0,0,.2);
 }
