@@ -16,27 +16,23 @@ const UTILS = (() => {
     });  
   };
 
-  // append multiple child nodes to single parent element
+  // append multiple child nodes to single parent element (outside DOM)
   const appendKids = (parent, children) => {
     return children.map((child) => parent.appendChild(child));
   };
 
-  // remove all child nodes of a DOM element
-  const removeKids = (element) => {
-    if (element.hasChildNodes()) {
-      element.removeChild(element.firstChild);
-
-      return UTILS.removeKids(element);
-    }
+  // check input isn't empty / just whitespace
+  const validateInput = (input) => {
+    return (input.length > 0 && (/^\s+$/).test(input)) ? false : input.trim();
   };
 
-  return Object.freeze({ makeEl, appendKids, removeKids });
+  return Object.freeze({ makeEl, appendKids, validateInput });
 })();
 
 
 /* FUNCTIONS THAT DIRECTLY DEAL WITH / TOUCH DOM */
 const DOM = ((UTILS) => {
-  const {makeEl, appendKids, removeKids} = UTILS;
+  const {makeEl, appendKids} = UTILS;
 
   const _doc = document;
   const _templates = Object.freeze({
@@ -101,22 +97,36 @@ const DOM = ((UTILS) => {
       return resultDivEl;
     }
   });
+  
+  // remove an element from DOM after delay - used by 'alertCtrl'
+  const _delayedRemoveEl = (elQuerySelector, delayInMs) => {
+    return setTimeout(() => {
+      _doc.querySelector(elQuerySelector).remove();
+    }, delayInMs);
+  };
 
   // DOM elements
   const els = Object.freeze({
-    main: _doc.querySelector('.main'),
-    container: _doc.querySelector('.container'),
+    alertSection: _doc.querySelector('.section__alert'),
     input: _doc.querySelector('.search-input'),
     newSearchBtn: _doc.querySelector('.btn-new-search'),
     resultSection: _doc.querySelector('.section__results')
   });
 
-  // print stats & articles or suggestions
-  const print = (data) => {
+  // recursively remove all child nodes of a DOM element
+  const removeKids = (element) => {
+    if (element.hasChildNodes()) {
+      element.removeChild(element.firstChild);
+
+      return DOM.removeKids(element);
+    }
+  };
+
+  // create stats & articles/suggestions templates & append to fragment
+  const prepResultFragment = (data) => {
     const {hits, queryText, articles, suggest} = data;
 
     const fragment = _doc.createDocumentFragment();
-    // create relevant templates & append to fragment
     const stats = _templates.articleStats(hits, queryText, articles.length);
     if (suggest) {
       fragment.appendChild(_templates.suggestion(suggest));
@@ -127,27 +137,40 @@ const DOM = ((UTILS) => {
       appendKids(fragment, resultEls);
     }
     fragment.insertBefore(stats, fragment.firstChild);
-    // display 'new search' btn & clear past results before appending new ones
-    els.newSearchBtn.hidden = false;
-    if (els.resultSection.hasChildNodes()) removeKids(els.resultSection);
 
-    return els.resultSection.appendChild(fragment);
+    return fragment;
   };
 
-  // display an alert message to DOM
-  const errAlert = (msg='Aww shucks! Something went wrong') => {
+  // clear results, hide 'newSearchBtn' & put focus on input field
+  const newSearch = () => {
+    const {resultSection, newSearchBtn, input} = els;
+    removeKids(resultSection);
+    newSearchBtn.hidden = true;
+    input.value = '';
+    input.focus();
+  };
+
+  // display an alert message to DOM & remove after x milliseconds
+  const alertCtrl = (msg='Aww shucks! Something went wrong') => {
     if (!_doc.querySelector('.alert-div')) {
       const removeDelay = 2700;
       const alert = _templates.alert(msg);
-      els.main.insertBefore(alert, els.container);
-      // remove alert from DOM & remove after x secs
-      setTimeout(() => {
-        _doc.querySelector('.alert-div').remove();
-      }, removeDelay);
+      print(els.alertSection, alert);
+      _delayedRemoveEl('.alert-div', removeDelay);
     }
   };
 
-  return Object.freeze({ els, print, errAlert });
+  // append an element to the DOM
+  const print = (target, element) => target.appendChild(element);
+
+  return Object.freeze({
+    els,
+    removeKids,
+    prepResultFragment,
+    newSearch,
+    alertCtrl,
+    print
+  });
 })(UTILS);
 
 
@@ -174,60 +197,50 @@ const DATA = (() => {
 })();
 
 
-/* 'PERIPHERAL' FUNCTIONS - don't directly deal with data / DOM */
-const AUX = ((removeKids, els) => {
-  const {resultSection, newSearchBtn, input} = els;
-
-  // check input field isn't empty / just whitespace
-  const validateInput = (input) => {
-    return (input.length > 0 && (/^\s+$/).test(input)) ? false : input.trim();
-  };
-
-  // clear results, hide 'newSearchBtn' & put focus on input field
-  const newSearch = () => {
-    removeKids(resultSection);
-    newSearchBtn.hidden = true;
-    input.value = '';
-    input.focus();
-  };
-
-  return Object.freeze({ validateInput, newSearch });
-})(UTILS.removeKids, DOM.els);
-
-
 /* INITIALIZE PROGRAM - main control & event listeners */
-const init = ((DOM, DATA, AUX) => {
-  const {els, errAlert, print} = DOM;
+const init = ((DOM, DATA, validateInput) => {
+  const {
+    els,
+    prepResultFragment,
+    removeKids,
+    newSearch,
+    alertCtrl,
+    print
+  } = DOM;
   const {makeRequest, filterResponse} = DATA;
-  const {validateInput, newSearch} = AUX;
+  const {input, newSearchBtn, resultSection} = els;
 
   // main controller function
   const ctrl = async (input) => {
     const queryText = validateInput(input);
-    if (!queryText) return errAlert('Please enter a search query');
+    if (!queryText) return alertCtrl('Please enter a search query');
     try {
       const rawResponse = await makeRequest(queryText);
       const data = filterResponse(rawResponse.query);
-      if (data.hits < 1) errAlert(`No results for "${queryText}"`);
-      print({...data, queryText});
+      if (data.hits < 1) alertCtrl(`No results for "${queryText}"`);
+      const resultFragment = prepResultFragment({...data, queryText});
+      if (resultSection.hasChildNodes()) removeKids(els.resultSection);
+      newSearchBtn.hidden = false;
+      
+      return print(resultSection, resultFragment);
     } catch (error) {
-      errAlert();
+      alertCtrl();
     }
   };
 
   // event-listeners
-  els.input.addEventListener('keyup', (e) => ctrl(e.target.value));
-  els.newSearchBtn.addEventListener('click', () => newSearch());
-  els.resultSection.addEventListener('click', (e) => {
+  input.addEventListener('keyup', (e) => ctrl(e.target.value));
+  newSearchBtn.addEventListener('click', () => newSearch());
+  resultSection.addEventListener('click', (e) => {
     if (e.target.className.includes('query')) {
-      const currentInput = els.input.value.trim();
+      const currentInput = input.value.trim();
       const newInput = e.target.className.includes('art') 
         ? e.target.parentElement.parentElement.firstChild.textContent
         : e.target.textContent;
       // only make new search if 'text' !== current 'input.value'
       if (currentInput === newInput) return null;
-      els.input.value = newInput;
+      input.value = newInput;
       ctrl(newInput);
     }
   });
-})(DOM, DATA, AUX);
+})(DOM, DATA, UTILS.validateInput);
