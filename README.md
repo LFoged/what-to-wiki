@@ -1,6 +1,6 @@
-# Wiki-wanna-know
+# What-to-Wiki
 
-### [See it live](https://lfoged.github.io/wiki-wanna-know/)
+### [See it live](https://lfoged.github.io/what-to-wiki/)
 ### Description
 Wikipedia search app.
 Uses the Wikipedia API to search for articles, based on user's input (list of matching articles is displayed as user types).
